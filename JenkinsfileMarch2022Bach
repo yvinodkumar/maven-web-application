@@ -1,10 +1,4 @@
-def sendSlackNotifications(String buildStatus = 'STARTED') {
-  
-  buildStatus =  buildStatus ?: 'SUCCESSFUL'
-
-  // Default values
-  def colorName = 'RED'
-  def colorCode = '#FF0000'
+def colorCode = '#FF0000'
   def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
   def summary = "${subject} (${env.BUILD_URL})"
 
@@ -12,7 +6,7 @@ def sendSlackNotifications(String buildStatus = 'STARTED') {
   if (buildStatus == 'STARTED') {
     color = 'YELLOW'
     colorCode = '#FFFF00'
-  } else if (buildStatus == 'SUCCESSFUL') {
+  } else if (buildStatus == 'SUCCESS') {
     color = 'GREEN'
     colorCode = '#00FF00'
   } else {
@@ -22,6 +16,27 @@ def sendSlackNotifications(String buildStatus = 'STARTED') {
 
   // Send notifications
   slackSend (color: colorCode, message: summary)
+}
+
+node{
+
+try{
+stage('CheckoutCode'){
+
+}
+stage('Build')
+{
+
+}
+}
+catch(e)
+{
+currentBuild.result = "FAILED"
+}
+finally{
+
+sendSlackNotifications(currentBuild.result)
+}
 }
 
 
@@ -34,6 +49,10 @@ echo "Node Name is:  ${env.NODE_NAME}"
 properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')), [$class: 'JobLocalConfiguration', changeReasonComment: ''], pipelineTriggers([githubPush()])])
 
  def mavenHome = tool name: "maven3.8.4"
+ 
+ 
+ try{
+ 
  
 //Get the code from the Github Repo
 stage('CheckoutCode'){
@@ -62,9 +81,16 @@ sshagent(['6f9f4626-e18c-49bd-af50-4672619503bf']) {
 }
 }
 */
+}//Try Closing
+ catch(e){
+ currentBuild.result = "FAILED"
+ }
+ finally{
+ sendSlackNotifications(currentBuild.result)
+ }
+}//Node Closing
 
 
-}
 
 
 
